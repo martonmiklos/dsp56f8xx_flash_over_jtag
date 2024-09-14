@@ -31,20 +31,28 @@
 #define ZLIO_WORD	1
 #define ZLIO_DWORD	2
 
+#ifdef linux
+#include <stdint.h>
+#define DWORD uint16_t
+#endif
+
 typedef struct {
 	DWORD	port;
 	DWORD	datatype;
 	DWORD	data;
 } tzliodata;
 
+#ifndef linux
 char win_nt(void);		/* 1=win NT platform, 0=other windows platform */
 char zlioinit(void);	/* initialises the driver */
 void zliostop(void);	/* stops the driver */
-DWORD zlioportread(DWORD port, DWORD datatype);				/* port read */
-void zlioportwrite(DWORD port, DWORD datatype, DWORD data);	/* port write */
 char zliosetiopm(char direct_access);						/* enable/disable direct port access */
 char driverstop(const char *name);		/* stop a driver */
 char driverremove(const char *name);	/* uninstalls a driver */
+#else
+DWORD zlioportread(DWORD port, DWORD datatype);				/* port read */
+void zlioportwrite(DWORD port, DWORD datatype, DWORD data);	/* port write */
+#endif
 
 /* message printing */
 #define	mesg	printf

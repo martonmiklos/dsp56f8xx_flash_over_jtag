@@ -16,7 +16,6 @@
 * 
 ****************************************************************************/
 
-#include <conio.h>
 
 #ifdef __LCC__		/* redefine hw access macros for the LCC compiler */
 #define	outp		_outp

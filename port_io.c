@@ -19,11 +19,14 @@
 ****************************************************************************/
 
 #include <stdio.h>
+#ifndef linux
 #include <windows.h>
 #include <winsvc.h>
 #include <conio.h>
+#endif
 #include "port_io.h"
 
+#ifndef linux
 /* zliostarted - status of the driver, zliodirect-direct access to ports */
 char zliostarted=0, zliodirect=0;
 /* handle to zlio driver */
@@ -45,7 +48,7 @@ char driverinstall(const char *path, const char *name) {
 	}
 	CloseServiceHandle(hService);
   	CloseServiceHandle(hSCMan);
-	return(0);
+    return(0);
 }
 
 /* uninstalls a driver */
@@ -65,7 +68,7 @@ char driverremove(const char *name) {
 		return(result);
 	}
 	CloseServiceHandle(hSCMan);
-	return(-1);
+    return(-1);
 }
 
 /* start a driver */
@@ -85,7 +88,7 @@ char driverstart(const char *name) {
 		return(result);
 	}
 	CloseServiceHandle(hSCMan);
-	return(-1);
+    return(-1);
 }
 
 /* stop a driver */
@@ -107,7 +110,7 @@ char driverstop(const char *name) {
 		return(result);
 	}
 	CloseServiceHandle(hSCMan);
-	return(-1);
+    return(-1);
 }
 
 /* 1=win NT platform, 0=other windows platform */
@@ -116,14 +119,14 @@ char win_nt(void) {
 	info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx (&info);
 	if (info.dwPlatformId==VER_PLATFORM_WIN32_NT) return(1);
-	return(0);
+    return(0);
 }
 
 /* displays last error message - for debugging purposes only */
 void DisplayLastError(void) {
-	LPVOID lpMsgBuf;
+    LPVOID lpMsgBuf;
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), 0, (LPTSTR) &lpMsgBuf, 0, NULL);
-	mesg("%s",lpMsgBuf);
+    mesg("%s",lpMsgBuf);
 }
 
 /* opens the zlio driver */
@@ -186,9 +189,11 @@ char zliostart(void) {
 //	driverinstall(path,"zlportio");
 //	return(driverstart("zlportio"));
 }
+#endif
 
 /* initialises the driver */
 char zlioinit(void) {
+#ifndef linux
 	if (!win_nt()) {
 		zliostarted=1;
 		zliodirect=1;
@@ -198,10 +203,13 @@ char zlioinit(void) {
 		} else zliostarted=1;
 	}
 	return(zliostarted);
+#else
+#endif
 }
 
 /* port read */
 DWORD zlioportread(DWORD port, DWORD datatype) {
+#ifndef linux
 	tzliodata resdata;
 	DWORD i,cbr;
 	if (!zliodirect) {
@@ -217,10 +225,13 @@ DWORD zlioportread(DWORD port, DWORD datatype) {
 		}
 	}
 	return(i);
+#else
+#endif
 }
 
 /* port write */
 void zlioportwrite(DWORD port, DWORD datatype, DWORD data) {
+#ifndef linux
 	tzliodata resdata;
 	DWORD cbr;
 	if (!zliodirect) {
@@ -237,8 +248,11 @@ void zlioportwrite(DWORD port, DWORD datatype, DWORD data) {
 			case ZLIO_DWORD:	_outpd(port,data); return;
 		}
 	}
+#else
+#endif
 }
 
+#ifndef linux
 /* enable/disable direct port access */
 char zliosetiopm(char direct_access) {
 	DWORD cbr;
@@ -252,3 +266,4 @@ char zliosetiopm(char direct_access) {
 	}
 	return(zliodirect);
 }
+#endif

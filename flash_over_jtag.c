@@ -53,11 +53,13 @@ Changes: Beta version: changed user interface, added page erase option
 		epsilon 0.7: added -c option (ignore S-rec checksum errors)
 */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
+
 #include "flash.h"
 #include "jtag.h"
-#include "report.h"
 #include "flash_over_jtag.h"
 #include "srec.h"
 #include "exit_codes.h"
@@ -73,22 +75,37 @@ operations operation=PROGRAM_FLASH;				/* what the tool is going to do: programm
 mem_read_constants mem_read;					/* parameters for reading memory */
 
 #ifdef WIN32
-	#define FILENAME_MAX_LEN	MAX_PATH
+    #define FILENAME_MAX_LEN	MAX_PATH
 #endif
 #ifdef MSDOS
-	#define FILENAME_MAX_LEN	256
+    #define FILENAME_MAX_LEN	256
+#endif
+#ifdef linux
+#include "limits.h"
+
+#define FILENAME_MAX_LEN	PATH_MAX
 #endif
 char s_rec_filename[FILENAME_MAX_LEN+1]="";		/* name of the s-record file */
 char cfg_filename[FILENAME_MAX_LEN+1]="";		/* name of the flash config file */
 char timestamp_filename[FILENAME_MAX_LEN+1]="";	/* name of the additional S-record file to be processed */
 char serror=0;									/* 0=report all errors, 1=silent mode (do not report all S-rec errors) */
 
+void outp()
+{
+    return;
+}
+
+uint32_t inp()
+{
+    return 0;
+}
+
 /* the 32k test will write and verify whole program flash of 803/805 */
 void speed_test_32k(void) {
 	unsigned long t1,t2;
 	int v;
 	unsigned int start_addr=flash_param[0].flash_start;
-	print("Test start\r\n");
+    printf("Test start\r\n");
 	t1=time(NULL);
 	once_init_flash_iface(flash_param[0]);
 	once_flash_mass_erase(flash_param[0]);
@@ -96,22 +113,22 @@ void speed_test_32k(void) {
 	once_flash_program_pg_no(start_addr);
 	for (v=0;v<32250;v++) {
 		if (!(start_addr%32)) once_flash_program_pg_no(start_addr);
-		if (!(v%512)) print("p");
+        if (!(v%512)) printf("p");
 		once_flash_program_1word(flash_param[0], v);
 		start_addr++;
 	}
 	once_flash_program_end();
-	print("\r\nProgramming done.\r\n");
+    printf("\r\nProgramming done.\r\n");
 	for (v=0;v<32250;v++) {
-		if (!(v%512)) print("v");
+        if (!(v%512)) printf("v");
 		once_flash_verify_1word(flash_param[0], v);
 	}
-	print("\r\nVerification done.\r\n");
+    printf("\r\nVerification done.\r\n");
 	jtag_disconnect();
 	t2=time(NULL);
-	print("Test done\r\n");
-	print("\r\nTest results :\r\n");
-	print("Time for mass erase, programming & verification of 32250 words : %ld sec\r\n",t2-t1);
+    printf("Test done\r\n");
+    printf("\r\nTest results :\r\n");
+    printf("Time for mass erase, programming & verification of 32250 words : %ld sec\r\n",t2-t1);
 }
 
 /* displays contents of memory on screen */
@@ -119,23 +136,23 @@ void display_memory(mem_read_constants mem_read) {
 	unsigned int offset;
 	int i;
 	char c;
-	print("%s memory dump - 0x%04X:0x%04X\r\n\n",mem_read.program_memory?"Program":"Data",mem_read.start,mem_read.end);
+    printf("%s memory dump - 0x%04X:0x%04X\r\n\n",mem_read.program_memory?"Program":"Data",mem_read.start,mem_read.end);
 	offset=0;
 	while (offset<(mem_read.end-mem_read.start+1)) {
-		print("%c:%04X: ",mem_read.program_memory?'p':'x',mem_read.start+offset);
+        printf("%c:%04X: ",mem_read.program_memory?'p':'x',mem_read.start+offset);
 		for (i=0;i<8;i++) {
-			if (mem_read.start+offset+i<=mem_read.end) print("%04X ",*(mem_read.data+offset+i));
-				else print("       ");
+            if (mem_read.start+offset+i<=mem_read.end) printf("%04X ",*(mem_read.data+offset+i));
+                else printf("       ");
 		}
 		for (i=0;i<8;i++) {
 			if (mem_read.start+offset+i<=mem_read.end) {
 				c=(*(mem_read.data+offset+i)&0xff00)>>8;	/* upper character */
-				print("%c",((c>' ')&&(c<127))?c:' ');
+                printf("%c",((c>' ')&&(c<127))?c:' ');
 				c=(*(mem_read.data+offset+i)&0x00ff);		/* lower character */
-				print("%c",((c>' ')&&(c<127))?c:' ');
-			} else print("  ");
+                printf("%c",((c>' ')&&(c<127))?c:' ');
+            } else printf("  ");
 		}
-		print("\r\n");
+        printf("\r\n");
 		offset+=8;
 	}
 }
@@ -159,33 +176,32 @@ void cleanup(void) {
 	#ifdef WIN32
 		zliostop();
 	#endif
-	close_log();
 }
 
 void usage(void) {
-	print("\r\nUsage:\r\n\nFlash_over_JTAG <flash config file> <S-record file> [<options>] or\r\n");
-	print("Flash_over_JTAG <flash config file> [<options>]\r\n\n");
-	print("Options:\r\n\n");
-	print("-pPORT\tPORT specifies the printer port address, the default is 0x378 (LPT1)\r\n");
-	print("-w\tWait for the DSP to leave the Reset state or power-up\r\n");
-	print("-s\tSilent mode - S-rec file errors are not reported\r\n");
-	print("-d\tLeave the target in debug mode on exit\r\n");
-	print("-c\tIgnore checksum errors in the S-rec files\r\n");
-	print("-page\tSpecifies that page erases should be used instead of mass erase\r\n");
-	print("-info\tAccess information blocks of Flash units instead of main blocks\r\n");
-	print("-mI,D\tSupport for JTAG daisy-chain. I and D specify position in the chain\r\n");
-	print("-l<log file>\t\tWrite messages into log file\r\n");
-	print("-t<S-rec file>\t\tProcess additional S-record file\r\n");
-	print("-r<mem><start>:<end>\tDump DSP memory to S-record file\r\n");
-	print("-v<mem><start>:<end>\tDump DSP memory to screen\r\n");
-	print("\n");
+    printf("\r\nUsage:\r\n\nFlash_over_JTAG <flash config file> <S-record file> [<options>] or\r\n");
+    printf("Flash_over_JTAG <flash config file> [<options>]\r\n\n");
+    printf("Options:\r\n\n");
+    printf("-pPORT\tPORT specifies the printer port address, the default is 0x378 (LPT1)\r\n");
+    printf("-w\tWait for the DSP to leave the Reset state or power-up\r\n");
+    printf("-s\tSilent mode - S-rec file errors are not reported\r\n");
+    printf("-d\tLeave the target in debug mode on exit\r\n");
+    printf("-c\tIgnore checksum errors in the S-rec files\r\n");
+    printf("-page\tSpecifies that page erases should be used instead of mass erase\r\n");
+    printf("-info\tAccess information blocks of Flash units instead of main blocks\r\n");
+    printf("-mI,D\tSupport for JTAG daisy-chain. I and D specify position in the chain\r\n");
+    printf("-l<log file>\t\tWrite messages into log file\r\n");
+    printf("-t<S-rec file>\t\tProcess additional S-record file\r\n");
+    printf("-r<mem><start>:<end>\tDump DSP memory to S-record file\r\n");
+    printf("-v<mem><start>:<end>\tDump DSP memory to screen\r\n");
+    printf("\n");
 }
 
 void redirect_pport(char *text) {
 	int portnum;
 	if (!sscanf(text,"-p0x%x ",&portnum)) return;
 	set_port(portnum);
-	print("Using printer port at address 0x%X.\r\n",portnum);
+    printf("Using printer port at address 0x%X.\r\n",portnum);
 }
 
 /* returns number of parameters or negative number in case of error */
@@ -197,10 +213,6 @@ int handleoptions(int argc,char *argv[]) {
 				case '?':	/* -? */
 					usage();
 					break;
-				case 'l':	/* -l<log file> */
-				case 'L':
-					open_log(argv[i]+2);
-					break;
 				case 'c':	/* -i - ignore S-rec checksum errors */
 				case 'C':
 					srec_check_checksums(0);
@@ -211,15 +223,15 @@ int handleoptions(int argc,char *argv[]) {
 					break;
 				case 'h':	/* -help */
 				case 'H':
-					if (!stricmp(argv[i]+1,"help")) {
+                    if (!strcmp(argv[i]+1,"help")) {
 						usage();
 						break;
 					}
 				case 'p':
 				case 'P':
-					if (!stricmp(argv[i]+1,"page")) {
+                    if (!strcmp(argv[i]+1,"page")) {
 						set_erase_mode(1);
-						print("Using Page Erase mode.\r\n");
+                        printf("Using Page Erase mode.\r\n");
 						break;
 					} else {	/* -pPORT */
 						argv[i][0]='-';
@@ -228,9 +240,9 @@ int handleoptions(int argc,char *argv[]) {
 					}
 				case 'i':
 				case 'I':
-					if (!stricmp(argv[i]+1,"info")) {
+                    if (!strcmp(argv[i]+1,"info")) {
 						set_info_block(1);
-						print("Flash Information Block access.\r\n");
+                        printf("Flash Information Block access.\r\n");
 					}
 					break;
 				case 'm':
@@ -238,7 +250,7 @@ int handleoptions(int argc,char *argv[]) {
 						int instr,data;
 						sscanf(argv[i]+2,"%d,%d",&instr,&data);
 						/* the printout is done after all parameters are processed to make sure it appears in the log */
-						//print("Target at position %d of instruction chain and %d of data chain.\r\n",instr,data);
+                        //printf("Target at position %d of instruction chain and %d of data chain.\r\n",instr,data);
 						set_data_pp(data);
 						set_instr_pp(instr);
 						break;
@@ -261,16 +273,16 @@ int handleoptions(int argc,char *argv[]) {
 								mem_read.program_memory=1;	/* program memory */
 								break;
 							default:
-								print("Incorrect memory type\r\n");
+                                printf("Incorrect memory type\r\n");
 								return(-1);
 						}
 						if (mem_read.end<mem_read.start) {
-							print("Address range incorrect\r\n");
+                            printf("Address range incorrect\r\n");
 							return(-1);
 						}
 						mem_read.data=(unsigned int*)calloc(mem_read.end-mem_read.start+1,sizeof(unsigned int));
 						if (mem_read.data==NULL) {
-							print("Memory allocation error\r\n");
+                            printf("Memory allocation error\r\n");
 							return(-1);
 						}
 						break;
@@ -288,7 +300,7 @@ int handleoptions(int argc,char *argv[]) {
 					set_exit_mode(1);	/* leave the part in debug mode on exit */
 					break;
 				default:
-					print("Unknown option %s\n",argv[i]);
+                    printf("Unknown option %s\n",argv[i]);
 					break;
 			}
 		} else {
@@ -299,7 +311,7 @@ int handleoptions(int argc,char *argv[]) {
 				strncpy(s_rec_filename,argv[i],FILENAME_MAX_LEN);
 			}
 			if (notoption>=2) {
-				print("Too many parameters!\r\n");
+                printf("Too many parameters!\r\n");
 			}
 			notoption++;
 		}
@@ -311,38 +323,38 @@ int handleoptions(int argc,char *argv[]) {
 int main (int argc,char *argv[]) {
 	int i;
 	int parcount;
-	print("DSP56F800 Flash loader. Compiled on %s, %s.\r\n",__DATE__,__TIME__);
-	print("version Epsilon 0.7\r\n");
-	print("(c) Motorola 2001 - 2002, MCSL\r\n");
-	print("Partial Copyright 2000-2002, Zloba Alexander\r\n");
+    printf("DSP56F800 Flash loader. Compiled on %s, %s.\r\n",__DATE__,__TIME__);
+    printf("version Epsilon 0.7\r\n");
+    printf("(c) Motorola 2001 - 2002, MCSL\r\n");
+    printf("Partial Copyright 2000-2002, Zloba Alexander\r\n");
 	#ifdef WIN32
 		if (!zlioinit()) {
-			print("Unable to access the I/O driver\r\n");
+            printf("Unable to access the I/O driver\r\n");
 			return(SYSTEM_ERROR);
 		}
 		if (!zliosetiopm(1)) {
-			print("Unable to gain direct access to I/O ports\r\n");
+            printf("Unable to gain direct access to I/O ports\r\n");
 			return(SYSTEM_ERROR);
 		}
 	#endif
 	i=atexit(cleanup);						/* install at exit function to clean up system */
 	if (i!=0) {
-		print("Error setting \"at exit\" function\r\n");
+        printf("Error setting \"at exit\" function\r\n");
 		return(SYSTEM_ERROR);
 	}
 	sys_init();								/* init system variables */
 	parcount=handleoptions(argc,argv);
 	if ((parcount < 1) || (parcount > 2)) {	/* number of parameters is incorrect */
-		print("Number of parameters incorrect or other error\r\n");
+        printf("Number of parameters incorrect or other error\r\n");
 		usage();
 		return(PARAM_ERROR);
 	}
 	if (jtag_init()) {
-		print("Command Converter not connected or disabled!");
+        printf("Command Converter not connected or disabled!");
 		return(JTAG_ERROR);
 	}
 	if (get_data_pp()||get_instr_pp()) {	/* if in daisy-chained environment, print target position */
-		print("Target at position %d of instruction chain and %d of data chain.\r\n",get_instr_pp(),get_data_pp());
+        printf("Target at position %d of instruction chain and %d of data chain.\r\n",get_instr_pp(),get_data_pp());
 	}
 	if (init_target()) return(DSP_ERROR);
 	switch (operation) {
@@ -355,7 +367,7 @@ int main (int argc,char *argv[]) {
 			}
 			if (read_s_record(s_rec_filename, flash_param, flash_count, &serror)) return(SREC_ERROR);	/* read the input file, if error reading the file return -2 */
 			if (timestamp_filename[0]) {
-				print("Processing timestamp file: %s\r\n",timestamp_filename);					/* if the filename is not null, process additional S-rec file */
+                printf("Processing timestamp file: %s\r\n",timestamp_filename);					/* if the filename is not null, process additional S-rec file */
 				read_s_record(timestamp_filename, flash_param, flash_count, &serror);
 			}
 			for (i=0;i<flash_count;i++) if (once_flash_program(flash_param[i])) return(VERIFY_ERROR);
@@ -365,7 +377,7 @@ int main (int argc,char *argv[]) {
 			once_flash_read(mem_read.program_memory, mem_read.start, mem_read.end, mem_read.data,flash_param,flash_count);
 			if (strlen(s_rec_filename)==0) write_s_record(cfg_filename, mem_read); else
 				write_s_record(s_rec_filename, mem_read);	/* if only one file specified, use ir as S-record filename */
-			print("Output written.\r\n");
+            printf("Output written.\r\n");
 			break;
 		case VIEW_MEMORY:
 			if ((flash_count=read_setup(cfg_filename,flash_param))<0) return(CFG_ERROR);		/* read the flash config file */

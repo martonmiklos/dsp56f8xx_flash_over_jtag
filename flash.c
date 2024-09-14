@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "report.h"
 #include "flash.h"
 
 /* Reads flash set-up from disk file */
@@ -31,7 +30,7 @@ int read_setup(char *path, flash_constants flash_param[]) {
 	char line[MAX_LINE_LENGTH+1];
 	input=fopen(path,"r");
 	if (input==NULL) {
-		print("Cannot open file \"%s\"\r\n",path);
+        printf("Cannot open file \"%s\"\r\n",path);
 		return(-1);
 	}
 	i=0;
@@ -53,7 +52,7 @@ int read_setup(char *path, flash_constants flash_param[]) {
 			if (j>12) i++;
 		}
 	}
-	print("%d flash blocks defined in the config file.\r\n",i);
+    printf("%d flash blocks defined in the config file.\r\n",i);
 	fclose(input);
 	return(i);
 }
@@ -69,14 +68,14 @@ int flash_prepare(flash_constants flash_param[], int flash_count) {
 		/* allocate mem */
 		flash_param[i].data=(unsigned int*)calloc(flash_param[i].flash_end-flash_param[i].flash_start+1,sizeof(unsigned int));
 		if (flash_param[i].data==NULL) {
-			print("Memory allocation error for flash block #%d\r\n",i);
+            printf("Memory allocation error for flash block #%d\r\n",i);
 			return(-1);
 		}
 		for(addr=0;addr<(flash_param[i].flash_end-flash_param[i].flash_start+1);addr++) *(flash_param[i].data+addr)=65535;
 		if (!flash_param[i].duplicate) {	/* if not duplicate, allocate new erase map */
 			flash_param[i].page_erase_map=(unsigned int*)calloc(MAX_PAGE_COUNT,sizeof(unsigned int));
 			if (flash_param[i].page_erase_map==NULL) {
-				print("Memory allocation error for flash block #%d\r\n",i);
+                printf("Memory allocation error for flash block #%d\r\n",i);
 				return(-2);
 			}
 			for(addr=0;addr<MAX_PAGE_COUNT;addr++) *(flash_param[i].page_erase_map+addr)=0;

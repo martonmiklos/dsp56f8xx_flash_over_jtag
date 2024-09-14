@@ -7,8 +7,6 @@ SOURCES += \
     Jtag.c \
     flash.c \
     flash_over_jtag.c \
-    port_io.c \
-    report.c \
     srec.c
 
 HEADERS += \
@@ -17,6 +15,4 @@ HEADERS += \
     flash_over_jtag.h \
     hw_access.h \
     jtag.h \
-    port_io.h \
-    report.h \
     srec.h

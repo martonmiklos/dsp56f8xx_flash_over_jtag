@@ -30,7 +30,6 @@
 #include "flash.h"
 #include "flash_over_jtag.h"
 #include "srec.h"
-#include "report.h"
 
 char checksums=1;	/* check checksums by default */
 
@@ -49,7 +48,7 @@ unsigned int hex2dec(char *bcd) {
 		if (charvalue>9) charvalue-='A'-'0'-10;
 		if (charvalue>15) charvalue-="a"-"A";
 		if ((charvalue>15) || (charvalue<0)) {
-			print("Hex2dec conversion error: %c\r\n",*bcd);
+			printf("Hex2dec conversion error: %c\r\n",*bcd);
 			return (0);
 		}
 		bcd++;
@@ -65,7 +64,7 @@ unsigned int hex2dec(char *bcd) {
 int s_line_process(char *line, unsigned long int *addr, unsigned int *data) {
 	int i,length,sum;
 	if (line[0]!='S') {
-		print("S-record file line does not start with \"S\"\r\n");
+		printf("S-record file line does not start with \"S\"\r\n");
 		return (-1);
 	}
 	sum=length=hex2dec(line+2);
@@ -86,28 +85,28 @@ int s_line_process(char *line, unsigned long int *addr, unsigned int *data) {
 		sum+=1+hex2dec(line+(length+1)*2);
 		sum%=256;
 		if (sum) {
-			print("S-record checksum error\r\n");
+			printf("S-record checksum error\r\n");
 			if (checksums) return (-1);
-			print("Error ignored\r\n");
+			printf("Error ignored\r\n");
 		}
 		return((length-5)/2);
 	}
 	if (line[1]=='0') {
 		char c;
-		print("S-record ID: ");
+		printf("S-record ID: ");
 		for(i=4;i<((length+1)*2);i+=2) {
 			c=hex2dec(line+i);
-			if((c>=32)&&(c<=127)) print("%c",c);	/* print the character only if printable */
+			if((c>=32)&&(c<=127)) printf("%c",c);	/* print the character only if printable */
 			sum+=c;
 			sum%=256;
 		}
-		print("\r\n");
+		printf("\r\n");
 		sum+=1+hex2dec(line+(length+1)*2);
 		sum%=256;
 		if (sum) {
-			print("S-record checksum error\r\n");
+			printf("S-record checksum error\r\n");
 			if (checksums) return (-1);
-			print("Error ignored\r\n");
+			printf("Error ignored\r\n");
 		}
 		return(-2);
 	}
@@ -151,7 +150,7 @@ int read_s_record(char *path, flash_constants flash_param[], int flash_count, ch
 	int j;
 	input=fopen(path,"r");
 	if (input==NULL) {
-		print("Cannot open file \"%s\"\r\n",path);
+		printf("Cannot open file \"%s\"\r\n",path);
 		return(-1);
 	}
 	while (!feof(input)) {
@@ -159,9 +158,9 @@ int read_s_record(char *path, flash_constants flash_param[], int flash_count, ch
 		j=s_line_process(line,&addr,line_data);
 		if (j>0) for (i=0;i<j;i++) if (place_data(addr+i,line_data[i], flash_param, flash_count)) {
 			if ((*serror)==1) {
-				print("Some data ignored, details not reported (silent mode)\r\n");
+				printf("Some data ignored, details not reported (silent mode)\r\n");
 				(*serror)++;
-			} else if (*serror==0) print("Data @ 0x%X ignored\r\n",addr%65536);
+			} else if (*serror==0) printf("Data @ 0x%X ignored\r\n",addr%65536);
 		}
 	}
 	for (j=0;j<flash_count;j++) {
@@ -229,7 +228,7 @@ int write_s_record(char *path, mem_read_constants mem_read) {
 	unsigned long int count,i;
 	output=fopen(path,"wb");
 	if (output==NULL) {
-		print("Cannot create file \"%s\"\r\n",path);
+		printf("Cannot create file \"%s\"\r\n",path);
 		return(-1);
 	}
 	sprintf(header,"%s memory dump 0x%X:0x%X",mem_read.program_memory?"Program":"Data",mem_read.start,mem_read.end);
