@@ -334,6 +334,7 @@ void jtag_disconnect(void) {
         JTAG_RESET_SET;
         printf("The target was left in debug mode\r\n");
     }
+    ftdi_usb_close(&ftdic);
 }
 
 /* Executes Jtag command */

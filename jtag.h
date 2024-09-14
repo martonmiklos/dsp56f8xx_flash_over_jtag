@@ -80,17 +80,17 @@ void set_DSP_wait(char wait);
 
 /* Executes one word DSP instruction */
 #define once_execute_instruction1(opcode) once_instruction_exec(0x09,0,1,0);\
-										  once_data_write(opcode)
+once_data_write(opcode)
 
 /* Executes two word DSP instruction */
 #define once_execute_instruction2(opcode1, opcode2) once_instruction_exec(0x09,0,0,0);\
-													once_data_write(opcode1);\
-													once_instruction_exec(0x09,0,1,0);\
-													once_data_write(opcode2)
+    once_data_write(opcode1);\
+    once_instruction_exec(0x09,0,1,0);\
+    once_data_write(opcode2)
 
 /* Executes two word DSP instruction and exits the debug mode */
 #define once_execute_instruction1_run(opcode) once_instruction_exec(0x09,0,1,1);\
-											  once_data_write(opcode);
+    once_data_write(opcode);
 
 /* Reads contents of the OPGDBR register */
 #define once_opgdbr_read()	(once_instruction_exec(0x08,1,1,0), once_data_read())
@@ -229,5 +229,5 @@ void set_DSP_wait(char wait);
 
 /* JMP addr + exit debug mode: execute JMP addr and NOP with exit from debug mode */
 #define once_jmp_run(addr) 	once_execute_instruction2(0xE984,addr);\
-							once_execute_instruction1_run(0xe040)
+once_execute_instruction1_run(0xe040)
 #endif
