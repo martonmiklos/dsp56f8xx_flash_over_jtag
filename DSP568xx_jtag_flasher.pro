@@ -3,10 +3,12 @@ CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
 
+LIBS += -lftdi
+
 SOURCES += \
-    Jtag.c \
     flash.c \
     flash_over_jtag.c \
+    jtag.c \
     srec.c
 
 HEADERS += \

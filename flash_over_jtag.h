@@ -16,6 +16,9 @@
 *
 ****************************************************************************/
 
+#ifndef FLASH_OVER_JTAG____H
+#define FLASH_OVER_JTAG____H
+
 typedef enum {
     PROGRAM_FLASH,
     READ_MEMORY,
@@ -37,3 +40,5 @@ int handleoptions(int argc,char *argv[]);
 int main (int argc,char *argv[]);
 void display_memory(mem_read_constants mem_read);
 
+
+#endif

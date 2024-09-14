@@ -16,6 +16,9 @@
 *
 ****************************************************************************/
 
+#ifndef FLASH______H
+#define FLASH______H
+
 #define MAX_FLASH_UNITS		32	/* how many flash blocks do we have at maximum */
 #define MAX_PAGE_COUNT		128	/* maximum flash size is 32k (128 pages, 256 words each) */
 #define MAX_LINE_LENGTH		300	/* max line length in input config file */
@@ -53,3 +56,5 @@ for duplicate pages the page_erase_map is not freshly allocated, pointer to the 
 
 int read_setup(char *path, flash_constants flash_param[]);
 int flash_prepare(flash_constants flash_param[], int flash_count);
+
+#endif

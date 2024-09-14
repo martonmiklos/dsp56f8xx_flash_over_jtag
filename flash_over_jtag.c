@@ -53,6 +53,7 @@ Changes: Beta version: changed user interface, added page erase option
 		epsilon 0.7: added -c option (ignore S-rec checksum errors)
 */
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
@@ -63,9 +64,7 @@ Changes: Beta version: changed user interface, added page erase option
 #include "flash_over_jtag.h"
 #include "srec.h"
 #include "exit_codes.h"
-#ifdef WIN32
-	#include "port_io.h"
-#endif
+
 
 flash_constants flash_param[MAX_FLASH_UNITS];	/* constants for flash units */
 int flash_count=0;								/* number of flash units */
@@ -74,62 +73,13 @@ operations operation=PROGRAM_FLASH;				/* what the tool is going to do: programm
 
 mem_read_constants mem_read;					/* parameters for reading memory */
 
-#ifdef WIN32
-    #define FILENAME_MAX_LEN	MAX_PATH
-#endif
-#ifdef MSDOS
-    #define FILENAME_MAX_LEN	256
-#endif
-#ifdef linux
-#include "limits.h"
 
 #define FILENAME_MAX_LEN	PATH_MAX
-#endif
-char s_rec_filename[FILENAME_MAX_LEN+1]="";		/* name of the s-record file */
-char cfg_filename[FILENAME_MAX_LEN+1]="";		/* name of the flash config file */
-char timestamp_filename[FILENAME_MAX_LEN+1]="";	/* name of the additional S-record file to be processed */
+char s_rec_filename[PATH_MAX+1]="";		/* name of the s-record file */
+char cfg_filename[PATH_MAX+1]="";		/* name of the flash config file */
+char timestamp_filename[PATH_MAX+1]="";	/* name of the additional S-record file to be processed */
 char serror=0;									/* 0=report all errors, 1=silent mode (do not report all S-rec errors) */
 
-void outp()
-{
-    return;
-}
-
-uint32_t inp()
-{
-    return 0;
-}
-
-/* the 32k test will write and verify whole program flash of 803/805 */
-void speed_test_32k(void) {
-	unsigned long t1,t2;
-	int v;
-	unsigned int start_addr=flash_param[0].flash_start;
-    printf("Test start\r\n");
-	t1=time(NULL);
-	once_init_flash_iface(flash_param[0]);
-	once_flash_mass_erase(flash_param[0]);
-	once_flash_program_prepare (flash_param[0].interface_address, flash_param[0].flash_start);
-	once_flash_program_pg_no(start_addr);
-	for (v=0;v<32250;v++) {
-		if (!(start_addr%32)) once_flash_program_pg_no(start_addr);
-        if (!(v%512)) printf("p");
-		once_flash_program_1word(flash_param[0], v);
-		start_addr++;
-	}
-	once_flash_program_end();
-    printf("\r\nProgramming done.\r\n");
-	for (v=0;v<32250;v++) {
-        if (!(v%512)) printf("v");
-		once_flash_verify_1word(flash_param[0], v);
-	}
-    printf("\r\nVerification done.\r\n");
-	jtag_disconnect();
-	t2=time(NULL);
-    printf("Test done\r\n");
-    printf("\r\nTest results :\r\n");
-    printf("Time for mass erase, programming & verification of 32250 words : %ld sec\r\n",t2-t1);
-}
 
 /* displays contents of memory on screen */
 void display_memory(mem_read_constants mem_read) {
@@ -327,16 +277,7 @@ int main (int argc,char *argv[]) {
     printf("version Epsilon 0.7\r\n");
     printf("(c) Motorola 2001 - 2002, MCSL\r\n");
     printf("Partial Copyright 2000-2002, Zloba Alexander\r\n");
-	#ifdef WIN32
-		if (!zlioinit()) {
-            printf("Unable to access the I/O driver\r\n");
-			return(SYSTEM_ERROR);
-		}
-		if (!zliosetiopm(1)) {
-            printf("Unable to gain direct access to I/O ports\r\n");
-			return(SYSTEM_ERROR);
-		}
-	#endif
+
 	i=atexit(cleanup);						/* install at exit function to clean up system */
 	if (i!=0) {
         printf("Error setting \"at exit\" function\r\n");
@@ -361,10 +302,6 @@ int main (int argc,char *argv[]) {
 		case PROGRAM_FLASH:
 			if ((flash_count=read_setup(cfg_filename,flash_param))<0) return(CFG_ERROR);		/* read the flash config file */
 			if (flash_prepare(flash_param,flash_count)) return(CFG_ERROR);						/* allocate memory */
-			if (parcount==1) {
-				speed_test_32k();
-				return(SPEED_TEST_OK);
-			}
 			if (read_s_record(s_rec_filename, flash_param, flash_count, &serror)) return(SREC_ERROR);	/* read the input file, if error reading the file return -2 */
 			if (timestamp_filename[0]) {
                 printf("Processing timestamp file: %s\r\n",timestamp_filename);					/* if the filename is not null, process additional S-rec file */

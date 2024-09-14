@@ -15,6 +15,11 @@
 * Author: Daniel Malik (daniel.malik@motorola.com)
 *
 ****************************************************************************/
+#ifndef JTAG____H
+#define JTAG____H
+#include <stdint.h>
+
+#include "flash.h"
 
 #define RETRY_DEBUG	10			/* how many JTAGIR polls should we try to wait for entry into DEBUG mode */
 #define JTAG_PATH_LEN_MAX 256	/* maximum JTAG DR & IR path lenght. High numbers do not matter, but the measure routine will take longer to execute */
@@ -225,3 +230,4 @@ void set_DSP_wait(char wait);
 /* JMP addr + exit debug mode: execute JMP addr and NOP with exit from debug mode */
 #define once_jmp_run(addr) 	once_execute_instruction2(0xE984,addr);\
 							once_execute_instruction1_run(0xe040)
+#endif

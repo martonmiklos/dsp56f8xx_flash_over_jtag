@@ -15,6 +15,9 @@
 *
 ****************************************************************************/
 
+#ifndef EXIT_CODES____H
+#define EXIT_CODES____H
+
 #define	SUCESS			0
 #define	CFG_ERROR		1
 #define	SREC_ERROR		2
@@ -24,3 +27,5 @@
 #define	PARAM_ERROR		6
 #define	SPEED_TEST_OK	7
 #define	SYSTEM_ERROR	8
+
+#endif
