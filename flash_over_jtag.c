@@ -54,7 +54,6 @@ Changes: Beta version: changed user interface, added page erase option
 */
 
 #include <stdio.h>
-#include <conio.h>
 #include <time.h>
 #include "flash.h"
 #include "jtag.h"
