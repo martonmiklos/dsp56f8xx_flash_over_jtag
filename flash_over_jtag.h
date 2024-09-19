@@ -35,7 +35,6 @@ typedef struct {
 void sys_init(void);
 void cleanup(void);
 void usage(void);
-void redirect_pport(char *text);
 int handleoptions(int argc,char *argv[]);
 int main (int argc,char *argv[]);
 void display_memory(mem_read_constants mem_read);

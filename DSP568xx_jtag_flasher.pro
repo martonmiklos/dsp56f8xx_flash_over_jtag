@@ -2,8 +2,9 @@ TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
 CONFIG -= qt
-
+CONFIG+=debug
 LIBS += -lftdi
+
 
 SOURCES += \
     flash.c \

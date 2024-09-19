@@ -10,15 +10,15 @@ The patching was optimized for time (improving the existing code was not conside
 
 I consider this as a disposable project, not planning to maintaining it.
 
-Code is not tested with HW yet, just compiles. Once it is done README.md will be updated.
+Code is not tested with HW yet, just compiles and detects the FT232H interface. Once it is done README.md will be updated.
 
-Pinout with an FT???? (depends on what can I gather to have least 6 I/O pins accessible by the bitbang API):
-- 0: RESET
-- 1: TMS
-- 2: TCK
-- 3: TDI
-- 4: TRST
-- 5: TDO
+Pinout with an FT232H
+- RESET - TXD
+- TMS - RXD
+- TCK - RTS
+- TDI - CRS
+- TRST - DTR
+- TDO - DSR
 
 ## Build system
 

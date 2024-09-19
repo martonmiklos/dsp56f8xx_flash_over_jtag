@@ -53,7 +53,8 @@
 #include "hw_access.h"
 #include "flash.h"
 #include "jtag.h"
-#include "stdio.h"
+#include <stdio.h>
+#include <stdbool.h>
 
 unsigned int jtag_port=0;		                /* contains FTDI port index*/
 unsigned int pport_data=0;						/* mirror of output port to save accesses */
@@ -71,8 +72,8 @@ int instr_pl;
 int data_pp=0;		/* position of the part in the JTAG chain, 0=beginning */
 int instr_pp=0;
 
-struct ftdi_context ftdic;
-
+struct ftdi_context *ftdic = NULL;
+bool ftdi_open = false;
 
 /* set info block (1) or normal access (0) mode */
 void set_info_block(unsigned int value) {
@@ -80,34 +81,44 @@ void set_info_block(unsigned int value) {
 }
 
 /* port number */
-void set_port(unsigned int port) {
-    (void)port;
-    if (ftdi_usb_open(&ftdic, 0x0403, 0x6001) == 0) {
-        if (ftdi_set_bitmode(&ftdic,
-                             JTAG_RESET_MASK |
-                                 JTAG_TMS_MASK |
-                                 JTAG_TCK_MASK |
-                                 JTAG_TDI_MASK |
-                                 JTAG_TRST_MASK |
-                                 JTAG_TDO_MASK,
-                             BITMODE_BITBANG) != 0) {
-            ftdi_usb_close(&ftdic);
-            return;
-        }
+int open_port() {
+    ftdic = ftdi_new();
+    if (!ftdic)
+        return -1;
+
+    ftdi_init(ftdic);
+
+    if (ftdi_usb_open(ftdic, 0x0403, 0x6014) != 0) { // FT232H adapt the PID if needed
+        printf("Unable to open FT232H\n");
+        return -1;
     }
+    ftdi_open = true;
+
+    if (ftdi_set_bitmode(ftdic,
+                         JTAG_RESET_MASK |
+                             JTAG_TMS_MASK |
+                             JTAG_TCK_MASK |
+                             JTAG_TDI_MASK |
+                             JTAG_TRST_MASK |
+                             JTAG_TDO_MASK,
+                         BITMODE_BITBANG) != 0) {
+        ftdi_usb_close(ftdic);
+        return -1;
+    }
+    return 0;
 }
 
 void outp(uint8_t port, uint8_t data)
 {
     (void)port;
-    ftdi_write_data(&ftdic, &data, 1);
+    ftdi_write_data(ftdic, &data, 1);
     return;
 }
 
 uint8_t inp(uint8_t port)
 {
     uint8_t ret = 0;
-    ftdi_read_data(&ftdic, &ret, 1);
+    ftdi_read_data(ftdic, &ret, 1);
     return ret;
 }
 
@@ -315,26 +326,29 @@ int jtag_instruction_exec_in_reset(int instruction) {
 
 /* Set all JTAG signals inactive and reset target DSP */
 void jtag_disconnect(void) {
-    JTAG_TCK_RESET;
-    JTAG_TMS_RESET;
-    JTAG_TDI_RESET;
-    if (exit_mode==0) {
-        JTAG_RESET_RESET;						/* /TRST & /RESET signals go low */
-        once_jmp_run(0);						/* jump to address 0 in case the /RESET line would not be connected */
-        JTAG_TRST_RESET;
-        jtag_instruction_exec(0x2);				/* execute IDCODE in case the /TRST line would not be connected */
-        WAIT_100_NS;
-        WAIT_100_NS;
-        JTAG_TRST_SET;							/* /TRST & /RESET signals go high */
-        JTAG_RESET_SET;
-        printf("The target was reset, the application is running\r\n");
-    } else {
-        jtag_instruction_exec(0x2);				/* execute IDCODE */
-        JTAG_TRST_SET;							/* /TRST & /RESET signals go high */
-        JTAG_RESET_SET;
-        printf("The target was left in debug mode\r\n");
+    if (ftdi_open) {
+        JTAG_TCK_RESET;
+        JTAG_TMS_RESET;
+        JTAG_TDI_RESET;
+        if (exit_mode==0) {
+            JTAG_RESET_RESET;						/* /TRST & /RESET signals go low */
+            once_jmp_run(0);						/* jump to address 0 in case the /RESET line would not be connected */
+            JTAG_TRST_RESET;
+            jtag_instruction_exec(0x2);				/* execute IDCODE in case the /TRST line would not be connected */
+            WAIT_100_NS;
+            WAIT_100_NS;
+            JTAG_TRST_SET;							/* /TRST & /RESET signals go high */
+            JTAG_RESET_SET;
+            printf("The target was reset, the application is running\r\n");
+        } else {
+            jtag_instruction_exec(0x2);				/* execute IDCODE */
+            JTAG_TRST_SET;							/* /TRST & /RESET signals go high */
+            JTAG_RESET_SET;
+            printf("The target was left in debug mode\r\n");
+        }
+        ftdi_usb_close(ftdic);
     }
-    ftdi_usb_close(&ftdic);
+    ftdi_free(ftdic);
 }
 
 /* Executes Jtag command */

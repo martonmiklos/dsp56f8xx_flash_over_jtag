@@ -43,7 +43,7 @@ void jtag_disconnect(void);
 void jtag_data_write8(unsigned int data);
 void jtag_data_write16(unsigned int data);
 unsigned int jtag_data_read16(void);
-void set_port(unsigned int port);
+int open_port();
 void set_info_block(unsigned int value);
 
 /* exit mode - leave the part in debug mode or reset it */
