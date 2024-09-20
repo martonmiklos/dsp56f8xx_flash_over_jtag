@@ -16,7 +16,7 @@ Pinout with an FT232H
 - RESET - TXD
 - TMS - RXD
 - TCK - RTS
-- TDI - CRS
+- TDI - CTS
 - TRST - DTR
 - TDO - DSR
 

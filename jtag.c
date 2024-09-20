@@ -99,8 +99,7 @@ int open_port() {
                              JTAG_TMS_MASK |
                              JTAG_TCK_MASK |
                              JTAG_TDI_MASK |
-                             JTAG_TRST_MASK |
-                             JTAG_TDO_MASK,
+                             JTAG_TRST_MASK,
                          BITMODE_BITBANG) != 0) {
         ftdi_usb_close(ftdic);
         return -1;
