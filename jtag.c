@@ -56,7 +56,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-unsigned int jtag_port=0;		                /* contains FTDI port index*/
 unsigned int pport_data=0;						/* mirror of output port to save accesses */
 
 unsigned char page_erase=0;						/* 1: page erase, 0: mass erase */
@@ -107,17 +106,18 @@ int open_port() {
     return 0;
 }
 
-void outp(uint8_t port, uint8_t data)
+void outp(uint8_t data)
 {
-    (void)port;
     ftdi_write_data(ftdic, &data, 1);
     return;
 }
 
-uint8_t inp(uint8_t port)
+uint8_t inp()
 {
     uint8_t ret = 0;
-    ftdi_read_data(ftdic, &ret, 1);
+    int rc = ftdi_read_pins(ftdic, &ret);
+    if (rc != 0)
+        printf("ftdi_read_pins failed with: %d\n", rc);
     return ret;
 }
 
@@ -474,13 +474,10 @@ int init_target (void) {
     printf("Jtag ID: %#lx\r\n",result);
     status=jtag_instruction_exec(0x7);			/*Debug Request*/
     if (!wait_for_DSP) {
-        JTAG_RESET_SET;							/* /RESET signal goes high */
-        WAIT_100_NS;
-        WAIT_100_NS;
-        WAIT_100_NS;
-        WAIT_100_NS;
+        JTAG_RESET_SET;
+        usleep(1);
     }
-    status=jtag_instruction_exec(0x7);		/*Debug Request #2 */
+    status=jtag_instruction_exec(0x7);		// Debug Request #2
     printf("Debug Request status: %#x\r\n",status);
     i=RETRY_DEBUG;
     do {
@@ -585,7 +582,9 @@ unsigned int jtag_data_read16(void) {
     JTAG_TCK_SET;								/* Go to Shift-DR */
     JTAG_TCK_RESET;
     JTAG_TCK_SET;								/* Now the Jtag is in the Shift-DR state */
-    if (data_pl-1-data_pp) JTAG_TDI_ASSIGN(1);
+    if (data_pl-1-data_pp) {
+        JTAG_TDI_ASSIGN(1);
+    }
     for(i=0;i<(data_pl-1-data_pp);i++) {
         JTAG_TCK_RESET;
         JTAG_TCK_SET;
@@ -596,7 +595,8 @@ unsigned int jtag_data_read16(void) {
         JTAG_TCK_RESET;
         JTAG_TCK_SET;
         result>>=1;
-        result|=JTAG_TDO_VALUE_SHIFTED_15;
+        if (JTAG_TDO_VALUE)
+            result |= 0x8000;
     }
     //	if (data_pp) JTAG_TDI_ASSIGN(1);			//this is not needed for read only operation
     //	for (i=0;i<data_pp;i++) {
