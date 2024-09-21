@@ -10,7 +10,7 @@ The patching was optimized for time (improving the existing code was not conside
 
 I consider this as a disposable project, not planning to maintaining it.
 
-Code is not tested with HW yet, just compiles and detects the FT232H interface. Once it is done README.md will be updated.
+Hardcoded to use an FT232H interface. So far only reading is tested. It is slow like hell...
 
 Pinout with an FT232H
 - RESET - TXD

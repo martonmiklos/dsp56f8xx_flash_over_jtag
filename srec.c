@@ -48,7 +48,7 @@ unsigned int hex2dec(char *bcd) {
         if (charvalue>9) charvalue-='A'-'0'-10;
         if (charvalue>15) charvalue-="a"-"A";
         if ((charvalue>15) || (charvalue<0)) {
-            printf("Hex2dec conversion error: %c\r\n",*bcd);
+            printf("Hex2dec conversion error: %c\n",*bcd);
             return (0);
         }
         bcd++;
@@ -64,7 +64,7 @@ unsigned int hex2dec(char *bcd) {
 int s_line_process(char *line, unsigned long int *addr, unsigned int *data) {
     int i,length,sum;
     if (line[0]!='S') {
-        printf("S-record file line does not start with \"S\"\r\n");
+        printf("S-record file line does not start with \"S\"\n");
         return (-1);
     }
     sum=length=hex2dec(line+2);
@@ -85,9 +85,9 @@ int s_line_process(char *line, unsigned long int *addr, unsigned int *data) {
         sum+=1+hex2dec(line+(length+1)*2);
         sum%=256;
         if (sum) {
-            printf("S-record checksum error\r\n");
+            printf("S-record checksum error\n");
             if (checksums) return (-1);
-            printf("Error ignored\r\n");
+            printf("Error ignored\n");
         }
         return((length-5)/2);
     }
@@ -100,13 +100,13 @@ int s_line_process(char *line, unsigned long int *addr, unsigned int *data) {
             sum+=c;
             sum%=256;
         }
-        printf("\r\n");
+        printf("\n");
         sum+=1+hex2dec(line+(length+1)*2);
         sum%=256;
         if (sum) {
-            printf("S-record checksum error\r\n");
+            printf("S-record checksum error\n");
             if (checksums) return (-1);
-            printf("Error ignored\r\n");
+            printf("Error ignored\n");
         }
         return(-2);
     }
@@ -150,7 +150,7 @@ int read_s_record(char *path, flash_constants flash_param[], int flash_count, ch
     int j;
     input=fopen(path,"r");
     if (input==NULL) {
-        printf("Cannot open file \"%s\"\r\n",path);
+        printf("Cannot open file \"%s\"\n",path);
         return(-1);
     }
     while (!feof(input)) {
@@ -158,9 +158,9 @@ int read_s_record(char *path, flash_constants flash_param[], int flash_count, ch
         j=s_line_process(line,&addr,line_data);
         if (j>0) for (i=0;i<j;i++) if (place_data(addr+i,line_data[i], flash_param, flash_count)) {
                     if ((*serror)==1) {
-                        printf("Some data ignored, details not reported (silent mode)\r\n");
+                        printf("Some data ignored, details not reported (silent mode)\n");
                         (*serror)++;
-                    } else if (*serror==0) printf("Data @ 0x%X ignored\r\n",addr%65536);
+                    } else if (*serror==0) printf("Data @ 0x%X ignored\n",addr%65536);
                 }
     }
     for (j=0;j<flash_count;j++) {
@@ -217,7 +217,7 @@ void s_line_write(FILE *output, int type, int length, long int addr, void *data)
     case 7:	fprintf(output,"0500000084");
         sum=0xff-0x76;
     }
-    fprintf(output,"%02X\r\n",0xff-sum); /* checksum */
+    fprintf(output,"%02X\n",0xff-sum); /* checksum */
 }
 
 /* Creates s-record file */
@@ -228,7 +228,7 @@ int write_s_record(char *path, mem_read_constants mem_read) {
     unsigned long int count,i;
     output=fopen(path,"wb");
     if (output==NULL) {
-        printf("Cannot create file \"%s\"\r\n",path);
+        printf("Cannot create file \"%s\"\n",path);
         return(-1);
     }
     sprintf(header,"%s memory dump 0x%X:0x%X",mem_read.program_memory?"Program":"Data",mem_read.start,mem_read.end);
@@ -236,7 +236,10 @@ int write_s_record(char *path, mem_read_constants mem_read) {
     count=mem_read.end-mem_read.start+1;
     i=0;
     while (i<count) {
-        s_line_write(output, 3, ((count-i)>OUTPUT_S_REC_DATA_PER_LINE)?OUTPUT_S_REC_DATA_PER_LINE:(count-i), mem_read.start+i+(mem_read.program_memory?0:0x200000), mem_read.data+i);
+        s_line_write(output,
+                     3,
+                     ((count-i)>OUTPUT_S_REC_DATA_PER_LINE)?OUTPUT_S_REC_DATA_PER_LINE:(count-i),
+                     mem_read.start+i+(mem_read.program_memory?0:0x200000), mem_read.data+i);
         i+=OUTPUT_S_REC_DATA_PER_LINE;
     }
     s_line_write(output, 7, 0, 0, NULL);

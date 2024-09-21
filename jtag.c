@@ -338,12 +338,12 @@ void jtag_disconnect(void) {
             WAIT_100_NS;
             JTAG_TRST_SET;							/* /TRST & /RESET signals go high */
             JTAG_RESET_SET;
-            printf("The target was reset, the application is running\r\n");
+            printf("The target was reset, the application is running\n");
         } else {
             jtag_instruction_exec(0x2);				/* execute IDCODE */
             JTAG_TRST_SET;							/* /TRST & /RESET signals go high */
             JTAG_RESET_SET;
-            printf("The target was left in debug mode\r\n");
+            printf("The target was left in debug mode\n");
         }
         ftdi_usb_close(ftdic);
     }
@@ -436,7 +436,7 @@ int init_target (void) {
     unsigned long int result;
     jtag_measure_paths();				/* measure JTAG chain length */
     if (wait_for_DSP) {					/* we need to wait until the DSP powers-up or comes out of Reset */
-        printf("Waiting for target board to power-up & DSP to come out of reset...\r\n");
+        printf("Waiting for target board to power-up & DSP to come out of reset...\n");
         JTAG_RESET_SET;					/* /RESET signal goes high */
         while(status!=0x0d) {
             jtag_measure_paths();		/* measure again (in case the board had no power we need to get correct lengths) */
@@ -459,36 +459,36 @@ int init_target (void) {
             status=jtag_instruction_exec(0x7);	/*Debug Request*/
             switch (status) {
             case (0x00):
-            case (0x0f):	printf("No power?          \r"); break;
-            case (0x09):	printf("DSP in Reset       \r"); break;
-            case (0x01):	printf("DSP running        \r"); break;
-            case (0x05):	printf("DSP in Wait or Stop\r"); break;
+            case (0x0f):	printf("No power?          \n"); break;
+            case (0x09):	printf("DSP in Reset       \n"); break;
+            case (0x01):	printf("DSP running        \n"); break;
+            case (0x05):	printf("DSP in Wait or Stop\n"); break;
             }
         }
     }
-    printf("JTAG IR path length: %d\r\n",get_instr_pl());		/* print JTAG path lengths */
-    printf("JTAG DR path length: %d (BYPASS)\r\n",get_data_pl());
+    printf("JTAG IR path length: %d\n",get_instr_pl());		/* print JTAG path lengths */
+    printf("JTAG DR path length: %d (BYPASS)\n",get_data_pl());
     status=jtag_instruction_exec(0x2);			/*IDCODE*/
-    printf("IDCode status: %#x\r\n",status);
+    printf("IDCode status: %#x\n",status);
     result=jtag_data_shift(0,32);
-    printf("Jtag ID: %#lx\r\n",result);
+    printf("Jtag ID: %#lx\n",result);
     status=jtag_instruction_exec(0x7);			/*Debug Request*/
-    if (!wait_for_DSP) {
+    /*if (!wait_for_DSP) {
         JTAG_RESET_SET;
-        usleep(1);
+        usleep(10);
     }
-    status=jtag_instruction_exec(0x7);		// Debug Request #2
-    printf("Debug Request status: %#x\r\n",status);
+    status=jtag_instruction_exec(0x7);	*/	// Debug Request #2
+    printf("Debug Request status: %#x\n",status);
     i=RETRY_DEBUG;
     do {
         status=jtag_instruction_exec(0x6);	/*Enable OnCE*/
-        printf("Enable OnCE status: %#x, polls left: %d\r\n",status,i);
+        printf("Enable OnCE status: %#x, polls left: %d\n",status,i);
         if (!(i--)) {
-            printf("Target chip refused to enter Debug mode!\r\n");
+            printf("Target chip refused to enter Debug mode!\n");
             return(1);
         }
     } while (status!=0xd);
-    printf("Enable OnCE successful, target chip is in Debug mode\r\n");
+    printf("Enable OnCE successful, target chip is in Debug mode\n");
     /* Now switch the memory map to internal flash (just in case EXTBOOT=1) */
     once_move_data_to_y0(0);		/* MOVE #0x0000,Y0 */
     once_move_y0_to_omr();			/* MOVE Y0,OMR */
@@ -615,7 +615,7 @@ unsigned int jtag_data_read16(void) {
 
 /* initialises the Flash Timing registers for Flash programming interface at given address */
 int once_init_flash_iface(flash_constants flash_param) {
-    printf("Initialising FIU at address: %#x\r\n",flash_param.interface_address);
+    printf("Initialising FIU at address: %#x\n",flash_param.interface_address);
     once_move_data_to_r2(flash_param.interface_address);	/* MOVE #<base address>,R2		*/
     once_move_data_to_y0(info_block?0x0040:0);	/* MOVE #0+IFREN,Y0				*/
     once_move_y0_to_xr2_inc();					/* clear FIU_CNTL register	*/
@@ -628,7 +628,7 @@ int once_init_flash_iface(flash_constants flash_param) {
     once_move_xr1_inc_to_y0();					/* MOVE x:R1,Y0				 	*/
     once_move_y0_to_xmem(0xffff);				/* MOVE Y0,<OPGDBR> 		 	*/
     if (once_opgdbr_read()&0x8000) {			/* Read OPGDBR register 		*/
-        printf("FIU initialisation failed, BUSY bit is set.\r\n");
+        printf("FIU initialisation failed, BUSY bit is set.\n");
         return(1);
     }
     once_move_data_to_y0(flash_param.clk_divisor);			/* now fill the timing registers */
@@ -649,7 +649,7 @@ int once_init_flash_iface(flash_constants flash_param) {
     once_move_y0_to_xr0_inc();
     once_move_data_to_y0(flash_param.trcvl);
     once_move_y0_to_xr0_inc();
-    printf("FIU (%#x) initialisation done.\r\n", flash_param.interface_address);
+    printf("FIU (%#x) initialisation done.\n", flash_param.interface_address);
     return(0);
 }
 
@@ -661,14 +661,14 @@ void once_flash_program_prepare (unsigned int fiu_address, unsigned int addr) {
     once_move_data_to_r2(addr);				/* MOVE #<address>,R2 		 */
     once_move_data_to_r3(fiu_address);		/* MOVE #<fiu_address>,R3	 */
 #ifdef DEBUG
-    printf("\r\nDBG: FIU_ADDR: 0x%x",fiu_address);
-    printf("\r\nDBG: START_ADDR: 0x%x",addr);
+    printf("\nDBG: FIU_ADDR: 0x%x",fiu_address);
+    printf("\nDBG: START_ADDR: 0x%x",addr);
 #endif
 }
 
 void once_flash_program_pg_no (unsigned int addr) {
 #ifdef DEBUG
-    printf("\r\nDBG: PG_NO: 0x%x",addr);
+    printf("\nDBG: PG_NO: 0x%x",addr);
 #endif
     do {
         once_move_xr3_to_y0();				/* MOVE x:R3,Y0				 */
@@ -692,7 +692,7 @@ void once_flash_program_end (void) {
 /* programs one word */
 void once_flash_program_1word(flash_constants flash_param, unsigned int data) {
 #ifdef DEBUG
-    printf("\r\nDBG: DATA: 0x%x",data);
+    printf("\nDBG: DATA: 0x%x",data);
 #endif
     once_move_data_to_y1(data);				/* MOVE #<data>,Y1			 */
     do {
@@ -727,7 +727,7 @@ int once_flash_verify_1word(flash_constants flash_param, unsigned int data) {
         once_move_r2_to_y0();					/* MOVE R2,Y0		 			 */
         once_move_y0_to_xmem(0xffff);			/* MOVE Y0,<OPGDBR> 			 */
         addr=once_opgdbr_read();
-        printf("Verification error at addr: %#x, wr: %#x, rd: %#x\r\n", addr-1, data, i);
+        printf("Verification error at addr: %#x, wr: %#x, rd: %#x\n", addr-1, data, i);
         return(1);
     }
     return(0);
@@ -744,7 +744,7 @@ int once_flash_mass_erase(flash_constants flash_param) {
     once_move_xr1_inc_to_y0();					/* MOVE x:R1,Y0				*/
     once_move_y0_to_xmem(0xffff);				/* MOVE Y0,<OPGDBR> 		*/
     if (once_opgdbr_read()&0x8000) {			/* Read OPGDBR register 	*/
-        printf("Flash mass erase failed, BUSY bit is set.\r\n");
+        printf("Flash mass erase failed, BUSY bit is set.\n");
         return(1);
     }
     once_move_data_to_r1(flash_param.interface_address+2); /* MOVE #<base address+2>,R1 */
@@ -774,7 +774,7 @@ int once_flash_mass_erase(flash_constants flash_param) {
     once_move_data_to_y0(info_block?0x0040:0);					/* MOVE #IFREN,Y0			 */
     once_move_y0_to_xr0_inc();					/* MOVE Y0,x:R0	(FIU_CNTL)	*/
     once_move_y0_to_xr1_inc();					/* MOVE Y0,x:R1	(FIU_EE)	*/
-    printf("Flash (%#x) mass erase done.\r\n", flash_param.interface_address);
+    printf("Flash (%#x) mass erase done.\n", flash_param.interface_address);
     return(0);
 }
 
@@ -796,7 +796,7 @@ int once_flash_page_erase(flash_constants flash_param) {
             once_move_xr1_inc_to_y0();								/* MOVE x:R1,Y0				*/
             once_move_y0_to_xmem(0xffff);							/* MOVE Y0,<OPGDBR>			*/
             if (once_opgdbr_read()&0x8000) {						/* Read OPGDBR register		*/
-                printf("Flash page erase failed, BUSY bit is set.\r\n");
+                printf("Flash page erase failed, BUSY bit is set.\n");
                 return(1);
             }
             once_move_data_to_r1(flash_param.interface_address+2);	/* MOVE #<base address+2>,R1 */
@@ -814,7 +814,7 @@ int once_flash_page_erase(flash_constants flash_param) {
                 once_move_y0_to_xmem(0xffff);						/* MOVE Y0,<OPGDBR>			*/
             } while (once_opgdbr_read()&0x8000);					/* repeat poll while BUSY is set */
         } else {
-            if (flash_param.page_erase_map[(addr-flash_param.flash_start)/256]&3) printf("Page erase of page #%d skipped (flash %#x)\r\n",page_number,flash_param.interface_address);
+            if (flash_param.page_erase_map[(addr-flash_param.flash_start)/256]&3) printf("Page erase of page #%d skipped (flash %#x)\n",page_number,flash_param.interface_address);
         }
         addr+=256;													/* advance to next page */
         page_number++;
@@ -824,7 +824,7 @@ int once_flash_page_erase(flash_constants flash_param) {
     once_move_data_to_y0(info_block?0x0040:0);					/* MOVE #0,Y0				*/
     once_move_y0_to_xr0_inc();									/* MOVE Y0,x:R0	(FIU_CNTL)	*/
     once_move_y0_to_xr1_inc();									/* MOVE Y0,x:R1	(FIU_EE)	*/
-    printf("Flash (%#x) page erase done, %d page(s) erased.\r\n", flash_param.interface_address,count);
+    printf("Flash (%#x) page erase done, %d page(s) erased.\n", flash_param.interface_address,count);
     return(0);
 }
 
@@ -834,7 +834,7 @@ int once_flash_program(flash_constants flash_param) {
     unsigned int *data;
     once_init_flash_iface(flash_param);
     if (!page_erase) {
-        if (flash_param.duplicate) printf("Mass erase skipped.\r\n");
+        if (flash_param.duplicate) printf("Mass erase skipped.\n");
         else {
             j = once_flash_mass_erase(flash_param);
             if (j) return(j);
@@ -853,14 +853,14 @@ int once_flash_program(flash_constants flash_param) {
         once_flash_program_1word(flash_param, *(data++));
         j++;
     }
-    printf("\r");
+    printf("\n");
     data=flash_param.data+(flash_param.start_addr-flash_param.flash_start);
     once_flash_program_end();
     for (i=0;i<flash_param.data_count;i++) {
         if (once_flash_verify_1word(flash_param, *(data++))) return(1);
         if (!(i%512)) printf("v");
     }
-    printf("\rFlash (%#x) programming done. %#x words written.                  \r\n", flash_param.interface_address, flash_param.data_count);
+    printf("\nFlash (%#x) programming done. %#x words written.\n", flash_param.interface_address, flash_param.data_count);
     return(0);
 }
 
@@ -891,7 +891,8 @@ unsigned int once_flash_read_1word(unsigned char program_memory) {
 }
 
 /* read memory */
-void once_flash_read(unsigned char program_memory, unsigned int start_addr, unsigned int end_addr, unsigned int *buffer, flash_constants flash_param[], int flash_count) {
+void once_flash_read(unsigned char program_memory, unsigned int start_addr,
+                     unsigned int end_addr, unsigned int *buffer, flash_constants flash_param[], int flash_count) {
     unsigned long int count=end_addr-start_addr+1;
     unsigned int i;
     once_flash_read_prepare (start_addr, flash_param, flash_count);
@@ -899,8 +900,8 @@ void once_flash_read(unsigned char program_memory, unsigned int start_addr, unsi
         *(buffer++)=once_flash_read_1word(program_memory);
         if (!(i%512)) printf("r");
     }
-    printf("\r");
-    printf("\rReading memory done, %#lx word(s) read.                                        \r\n", count);
+    printf("\n");
+    printf("\nReading memory done, %#lx word(s) read.\n", count);
 }
 
 

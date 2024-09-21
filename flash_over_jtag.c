@@ -256,6 +256,7 @@ int handleoptions(int argc,char *argv[]) {
 int main (int argc,char *argv[]) {
     int i;
     int parcount;
+    setvbuf(stdout, _IONBF, NULL, 0);
     printf("DSP56F800 Flash loader. Compiled on %s, %s.\n",__DATE__,__TIME__);
     printf("version Epsilon 0.7\n");
     printf("(c) Motorola 2001 - 2002, MCSL\n");
