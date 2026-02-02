@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: libftdi-dev
+          version: 1.0
+      
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          aqtversion: '==3.1.*'
+          version: '6.5.3'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          cache: true
+          cache-key-prefix: install-qt-action
+          
+      # Runs a set of commands using the runners shell
+      - name: Build
+        run: |
+          cd $GITHUB_WORKSPACE
+          qmake DSP568xx_jtag_flasher.pro
+          make
+          
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsp-flasher-linux
+          path: DSP568xx_jtag_flasher
+  
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.5.3
+          target: desktop
+          arch: win64_msvc2019_64
+          cache: true
+          cache-key-prefix: install-qt-action
+
+      - name: Clone libftdi
+        uses: actions/checkout@v6
+        with:
+          repository: 'stonedDiscord/libftdi'
+          ref: 'windows'
+          path: libftdi
+
+      - name: Build libftdi
+        working-directory: 'libftdi'
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release
+          cp ./release/libftdi.lib ./ftdi.lib
+    
+      - name: Build
+        run: |
+          $libftdiInc = Join-Path $Env:GITHUB_WORKSPACE 'libftdi\include'
+          $libftdiLib = Join-Path $Env:GITHUB_WORKSPACE 'libftdi\build'
+          $Env:INCLUDE = "$Env:INCLUDE;$libftdiInc"
+          $Env:LIB = "$Env:LIB;$libftdiLib"
+
+          qmake DSP568xx_jtag_flasher.pro
+          nmake
+          
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsp-flasher-windows
+          path: release/DSP568xx_jtag_flasher.exe

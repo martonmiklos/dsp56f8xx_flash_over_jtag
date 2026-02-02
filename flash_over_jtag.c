@@ -74,6 +74,9 @@ operations operation=VIEW_MEMORY;				/* what the tool is going to do: view flash
 
 mem_read_constants mem_read;					/* parameters for reading memory */
 
+#ifndef PATH_MAX
+#define PATH_MAX 250
+#endif
 
 #define FILENAME_MAX_LEN	PATH_MAX
 char s_rec_filename[PATH_MAX+1]="";		/* name of the s-record file */
@@ -314,3 +317,4 @@ int main (int argc,char *argv[]) {
     }
     return(SUCESS);
 }
+

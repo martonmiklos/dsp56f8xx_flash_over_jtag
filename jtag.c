@@ -106,13 +106,13 @@ int open_port() {
     return 0;
 }
 
-void outp(uint8_t data)
+void jtag_outp(uint8_t data)
 {
     ftdi_write_data(ftdic, &data, 1);
     return;
 }
 
-uint8_t inp()
+uint8_t jtag_inp()
 {
     uint8_t ret = 0;
     int rc = ftdi_read_pins(ftdic, &ret);
@@ -903,6 +903,7 @@ void once_flash_read(unsigned char program_memory, unsigned int start_addr,
     printf("\n");
     printf("\nReading memory done, %#lx word(s) read.\n", count);
 }
+
 
 
 
