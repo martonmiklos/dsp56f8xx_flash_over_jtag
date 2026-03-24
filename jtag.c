@@ -58,7 +58,7 @@
 
 unsigned int pport_data=0;						/* mirror of output port to save accesses */
 
-unsigned char page_erase=0;						/* 1: page erase, 0: mass erase */
+unsigned char page_erase=1;						/* 1: page erase, 0: mass erase */
 
 unsigned char info_block=0;						/* 1: info block, 0: normal flash access */
 
@@ -834,10 +834,12 @@ int once_flash_program(flash_constants flash_param) {
     unsigned int *data;
     once_init_flash_iface(flash_param);
     if (!page_erase) {
-        if (flash_param.duplicate) printf("Mass erase skipped.\n");
-        else {
+        if (flash_param.duplicate) {
+            printf("Mass erase skipped.\n");
+        } else {
             j = once_flash_mass_erase(flash_param);
-            if (j) return(j);
+            if (j)
+                return(j);
         }
     } else {
         j = once_flash_page_erase(flash_param);

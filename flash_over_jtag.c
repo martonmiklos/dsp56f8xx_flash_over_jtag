@@ -133,7 +133,6 @@ void usage(void) {
     printf("\nUsage:\n\nFlash_over_JTAG <flash config file> <S-record file> [<options>] or\n");
     printf("Flash_over_JTAG <flash config file> [<options>]\n\n");
     printf("Options:\n\n");
-    printf("-w\tWait for the DSP to leave the Reset state or power-up\n");
     printf("-s\tSilent mode - S-rec file errors are not reported\n");
     printf("-d\tLeave the target in debug mode on exit\n");
     printf("-c\tIgnore checksum errors in the S-rec files\n");
@@ -141,6 +140,7 @@ void usage(void) {
     printf("-info\tAccess information blocks of Flash units instead of main blocks\n");
     printf("-mI,D\tSupport for JTAG daisy-chain. I and D specify position in the chain\n");
     printf("-t<S-rec file>\t\tProcess additional S-record file\n");
+    printf("-w<mem><start>:<end>\tWrite DSP memory from S-record file\n");
     printf("-r<mem><start>:<end>\tDump DSP memory to S-record file\n");
     printf("-v<mem><start>:<end>\tDump DSP memory to screen\n\n");
 }
@@ -168,12 +168,14 @@ int handleoptions(int argc,char *argv[]) {
                     usage();
                     break;
                 }
+                break;
             case 'P':
                 if (!strcmp(argv[i]+1,"page")) {
                     set_erase_mode(1);
                     printf("Using Page Erase mode.\n");
                     break;
                 }
+                break;
             case 'i':
             case 'I':
                 if (!strcmp(argv[i]+1,"info")) {
@@ -194,10 +196,15 @@ int handleoptions(int argc,char *argv[]) {
             case 'v':
             case 'V':		/* view memory */
                 operation=VIEW_MEMORY;	/* the set-up is the same as for READ_MEMORY */
+            case 'w':
+            case 'W':		/* write memory */
+                operation=PROGRAM_FLASH;
             case 'r':
             case 'R':	{	/* read memory */
                 char mem_type;
-                if ((argv[i][1]=='r')||(argv[i][1]=='R')) operation=READ_MEMORY;
+                if ((argv[i][1]=='r')||(argv[i][1]=='R'))
+                    operation=READ_MEMORY;
+
                 sscanf(argv[i]+2,"%c0x%x:0x%x",&mem_type,&(mem_read.start),&(mem_read.end));
                 switch (mem_type) {
                 case 'x':
@@ -226,10 +233,6 @@ int handleoptions(int argc,char *argv[]) {
             case 's':
             case 'S':
                 serror=1;	/* do not report S-rec errors */
-                break;
-            case 'w':
-            case 'W':		/* wait for the DSP to come out of reset */
-                set_DSP_wait(1);
                 break;
             case 'd':
             case 'D':
@@ -300,7 +303,10 @@ int main (int argc,char *argv[]) {
             printf("Processing timestamp file: %s\n",timestamp_filename);					/* if the filename is not null, process additional S-rec file */
             read_s_record(timestamp_filename, flash_param, flash_count, &serror);
         }
-        for (i=0;i<flash_count;i++) if (once_flash_program(flash_param[i])) return(VERIFY_ERROR);
+        for (i=0;i<flash_count;i++) {
+            if (once_flash_program(flash_param[i]))
+                return(VERIFY_ERROR);
+        }
         return(SUCESS);
     case READ_MEMORY:
         if ((flash_count=read_setup(cfg_filename,flash_param))<0) return(CFG_ERROR);		/* read the flash config file */

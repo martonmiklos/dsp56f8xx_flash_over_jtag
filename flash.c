@@ -37,9 +37,12 @@ int read_setup(char *path, flash_constants flash_param[]) {
     while ((i<MAX_FLASH_UNITS)&&(!feof(input))) {
         if (fgets(line,MAX_LINE_LENGTH,input)==NULL) break;
         if (line[0]!='#') {
-            j = sscanf(line,"%d 0x%x 0x%x %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+            j = sscanf(line,"%d 0x%x 0x%x %d 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
                        &base,
                        &(flash_param[i].flash_start),
+                       &(flash_param[i].flash_end),
+                       &(flash_param[i].program_memory),
+                       &(flash_param[i].interface_address),
                        &(flash_param[i].terasel),
                        &(flash_param[i].tmel),
                        &(flash_param[i].tnvsl),
@@ -83,14 +86,16 @@ int flash_prepare(flash_constants flash_param[], int flash_count) {
             printf("Memory allocation error for flash block #%ld\n",i);
             return(-1);
         }
-        for(addr=0;addr<(flash_param[i].flash_end-flash_param[i].flash_start+1);addr++) *(flash_param[i].data+addr)=65535;
+        for(addr=0;addr<(flash_param[i].flash_end-flash_param[i].flash_start+1);addr++)
+            *(flash_param[i].data+addr)=65535;
         if (!flash_param[i].duplicate) {	/* if not duplicate, allocate new erase map */
             flash_param[i].page_erase_map=(unsigned int*)calloc(MAX_PAGE_COUNT,sizeof(unsigned int));
             if (flash_param[i].page_erase_map==NULL) {
                 printf("Memory allocation error for flash block #%ld\n",i);
                 return(-2);
             }
-            for(addr=0;addr<MAX_PAGE_COUNT;addr++) *(flash_param[i].page_erase_map+addr)=0;
+            for(addr=0;addr<MAX_PAGE_COUNT;addr++)
+                *(flash_param[i].page_erase_map+addr)=0;
         } else {
             addr=0;							/* if duplicate, find the original and assign the same map */
             while ((addr<i)&&(flash_param[i].interface_address!=flash_param[addr].interface_address))

@@ -163,12 +163,15 @@ int read_s_record(char *path, flash_constants flash_param[], int flash_count, ch
                     } else if (*serror==0) printf("Data @ 0x%X ignored\n",addr%65536);
                 }
     }
+
     for (j=0;j<flash_count;j++) {
         i=0;
-        while((*(flash_param[j].data+i)==65535) && (i<flash_param[j].flash_end-flash_param[j].flash_start)) i++;
+        while((*(flash_param[j].data+i)==65535) && (i<flash_param[j].flash_end-flash_param[j].flash_start))
+            i++;
         flash_param[j].start_addr=flash_param[j].flash_start+i;
         i=flash_param[j].flash_end-flash_param[j].flash_start;
-        while((*(flash_param[j].data+i)==65535) && (i>=0)) i--;
+        while((*(flash_param[j].data+i)==65535) && (i>=0))
+            i--;
         if (i<0) flash_param[j].data_count=0; else flash_param[j].data_count=i+1-(flash_param[j].start_addr-flash_param[j].flash_start);
     }
     return(0);
