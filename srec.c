@@ -92,11 +92,12 @@ int s_line_process(char *line, unsigned long int *addr, unsigned int *data) {
         return((length-5)/2);
     }
     if (line[1]=='0') {
-        char c;
+        unsigned int c;
         printf("S-record ID: ");
         for(i=4;i<((length+1)*2);i+=2) {
             c=hex2dec(line+i);
-            if((c>=32)&&(c<=127)) printf("%c",c);	/* print the character only if printable */
+            if ((c>=32)&&(c<=127))
+              printf("%c",c);	/* print the character only if printable */
             sum+=c;
             sum%=256;
         }
@@ -160,7 +161,9 @@ int read_s_record(char *path, flash_constants flash_param[], int flash_count, ch
                     if ((*serror)==1) {
                         printf("Some data ignored, details not reported (silent mode)\n");
                         (*serror)++;
-                    } else if (*serror==0) printf("Data @ 0x%X ignored\n",addr%65536);
+                    } else if (*serror==0) {
+                      printf("Data @ 0x%X ignored\n", (unsigned int)(addr%65536));
+                    }
                 }
     }
 

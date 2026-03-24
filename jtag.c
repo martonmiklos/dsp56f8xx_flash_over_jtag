@@ -308,7 +308,11 @@ int jtag_instruction_exec_in_reset(int instruction) {
         status>>=1;
         status|=JTAG_TDO_VALUE<<3;
     }
-    if (instr_pp) JTAG_TDI_ASSIGN(1);
+
+    if (instr_pp) {
+      JTAG_TDI_ASSIGN(1);
+    }
+
     for (i=0;i<instr_pp;i++) {
         if (i==(instr_pp-1)) JTAG_TMS_SET;			/* Go to Exit1-IR */
         JTAG_TCK_RESET;
@@ -363,7 +367,10 @@ int jtag_instruction_exec(int instruction) {
     JTAG_TCK_SET;
     JTAG_TCK_RESET;
     JTAG_TCK_SET;								/* Go to Shift-IR */ /* Now the Jtag is in the Shift-IR state */
-    if (instr_pl-instr_pp-4) JTAG_TDI_ASSIGN(1);
+    if (instr_pl-instr_pp-4) {
+      JTAG_TDI_ASSIGN(1);
+    }
+
     for(i=0;i<(instr_pl-instr_pp-4);i++) {
         JTAG_TCK_RESET;
         JTAG_TCK_SET;
@@ -377,7 +384,9 @@ int jtag_instruction_exec(int instruction) {
         status>>=1;
         status|=JTAG_TDO_VALUE<<3;
     }
-    if (instr_pp) JTAG_TDI_ASSIGN(1);
+    if (instr_pp) {
+      JTAG_TDI_ASSIGN(1);
+    }
     for (i=0;i<instr_pp;i++) {
         if (i==(instr_pp-1)) JTAG_TMS_SET;			/* Go to Exit1-IR */
         JTAG_TCK_RESET;
@@ -780,7 +789,7 @@ int once_flash_mass_erase(flash_constants flash_param) {
 
 /* performs all page erases needed for programming  */
 int once_flash_page_erase(flash_constants flash_param) {
-    int page_number,addr,count=0;
+    unsigned int page_number,addr,count=0;
     addr=flash_param.start_addr;
     page_number=flash_param.start_addr/256;							/* pages are 256 words long */
     once_move_data_to_r1(flash_param.interface_address);			/* MOVE #<base address>,R1	*/

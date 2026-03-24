@@ -75,8 +75,9 @@ int read_setup(char *path, flash_constants flash_param[]) {
 /* prepares memory for flash blocks */
 /* allocatest memory and fills data buffers */
 /* returns -1 on error */
-int flash_prepare(flash_constants flash_param[], int flash_count) {
-    long int i;
+int flash_prepare(flash_constants flash_param[], unsigned int flash_count)
+{
+    unsigned long int i;
     unsigned long int addr;
 
     for (i=0;i<flash_count;i++) {

@@ -53,11 +53,8 @@ Changes: Beta version: changed user interface, added page erase option
 		epsilon 0.7: added -c option (ignore S-rec checksum errors)
 */
 
-#include <limits.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
 
 #include "flash.h"
@@ -201,10 +198,9 @@ int handleoptions(int argc,char *argv[]) {
                 operation=PROGRAM_FLASH;
             case 'r':
             case 'R':	{	/* read memory */
-                char mem_type;
-                if ((argv[i][1]=='r')||(argv[i][1]=='R'))
-                    operation=READ_MEMORY;
+                operation=READ_MEMORY;
 
+                char mem_type;
                 sscanf(argv[i]+2,"%c0x%x:0x%x",&mem_type,&(mem_read.start),&(mem_read.end));
                 switch (mem_type) {
                 case 'x':
@@ -262,7 +258,7 @@ int handleoptions(int argc,char *argv[]) {
 int main (int argc,char *argv[]) {
     int i;
     int parcount;
-    setvbuf(stdout, _IONBF, NULL, 0);
+    //setvbuf(stdout, _IONBF, NULL, 0);
     printf("DSP56F800 Flash loader. Compiled on %s, %s.\n",__DATE__,__TIME__);
     printf("version Epsilon 0.7\n");
     printf("(c) Motorola 2001 - 2002, MCSL\n");

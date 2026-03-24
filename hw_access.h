@@ -37,7 +37,7 @@
 #define JTAG_TDI_SET		{pport_data|=JTAG_TDI_MASK;}
 #define JTAG_TDI_RESET		{pport_data&=~JTAG_TDI_MASK;}
 
-#define JTAG_TDI_ASSIGN(i)	if (i&0x0001) JTAG_TDI_SET else JTAG_TDI_RESET
+#define JTAG_TDI_ASSIGN(i)	{if (i&0x0001) JTAG_TDI_SET else JTAG_TDI_RESET}
 
 #define JTAG_TRST_SET		pport_data|=JTAG_TRST_MASK;jtag_outp(pport_data)
 #define JTAG_TRST_RESET		pport_data&=~JTAG_TRST_MASK;jtag_outp(pport_data)

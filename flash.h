@@ -55,6 +55,6 @@ for duplicate pages the page_erase_map is not freshly allocated, pointer to the 
 */
 
 int read_setup(char *path, flash_constants flash_param[]);
-int flash_prepare(flash_constants flash_param[], int flash_count);
+int flash_prepare(flash_constants flash_param[], unsigned int flash_count);
 
 #endif
